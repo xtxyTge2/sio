@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef SIO_USE_URING
+#include <liburing.h>
+#endif // SIO_USE_URING
+
 typedef struct sio_string sio_string;
 struct sio_string {
     size_t length;
@@ -23,6 +27,10 @@ struct sio_file {
 typedef struct sio_context sio_context;
 struct sio_context {
     bool ok;
+#ifdef SIO_USE_URING
+    struct io_uring ring;
+    int flags;
+#endif // SIO_USE_URING
 };
 
 

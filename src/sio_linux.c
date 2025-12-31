@@ -8,6 +8,10 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#ifdef SIO_USE_URING
+#include <liburing.h>
+#endif // SIO_USE_URING
+
 #define SIO_MALLOC(ptr, count) do {                        \
     typeof(ptr) *sio_ptr_ = &(ptr);                        \
     size_t sio_count_ = (count);                           \
@@ -163,14 +167,29 @@ void sio_file_free (sio_file* p) {
 /* SIO_CONTEXT */
 sio_context* sio_context_init (void) {
     sio_context *ctx = nullptr;
-    SIO_MALLOC(ctx, 1);
+    SIO_CALLOC(ctx, 1);
 
-    assert (ctx != nullptr);
+    ctx->ok = false;
+#ifdef SIO_USE_URING
+    ctx->flags = 0;
+
+    const unsigned int entries = 100; /* TODO: make this a param */
+    int ret = io_uring_queue_init (entries, &ctx->ring, ctx->flags);
+    if (ret != 0) {
+        fprintf (stderr, "io_uring_queue_init failed: errno=%d\n", -ret);
+        SIO_FREE(ctx);
+        return nullptr;
+    }
+#endif // SIO_USE_URING
+
     return ctx;
 }
 
 void sio_context_destroy (sio_context* ctx) {
-    assert (ctx);
+#ifdef SIO_USE_URING
+    io_uring_queue_exit (&ctx->ring);
+    //memset (&ctx->ring, 0, sizeof (ctx->ring));
+#endif // SIO_USE_URING
     SIO_FREE(ctx);
 }
 
@@ -179,7 +198,62 @@ sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
     assert (ctx);
 
     if (! file || ! file->file) return nullptr;
-    return nullptr;
+
+    const int fd = fileno (file->file);
+    if (fd == -1) {
+        perror ("fileno");
+        return nullptr;
+    }
+
+    struct stat st;
+    if (fstat (fd, &st) == -1) {
+        perror ("fstat");
+        fprintf (stderr, "Failed fstat for fd: %d\n", fd);
+        return nullptr;
+    }
+    const size_t len = st.st_size;
+
+    /* file empty */
+    if (len == 0) {
+        sio_string *s = sio_string_new ();
+        return s;
+    }
+
+    char* buf = nullptr;
+    SIO_MALLOC(buf, len);
+
+    struct io_uring_sqe *sqe = io_uring_get_sqe (&ctx->ring);
+    if (! sqe) {
+        io_uring_submit (&ctx->ring); /* sqe might be full, submit first */
+        fprintf (stderr, "Failed to get sqe entry");
+        SIO_FREE(buf);
+        return nullptr;
+    }
+
+    io_uring_prep_read (sqe, fd, buf, len, 0);
+
+    int ret = io_uring_submit (&ctx->ring);
+    if (ret < 0) {
+        fprintf (stderr, "Failed sqe submit, errno: %d\n", ret);
+        SIO_FREE(buf);
+        return nullptr;
+    }
+
+    struct io_uring_cqe *cqe = nullptr;
+    ret = io_uring_wait_cqe (&ctx->ring, &cqe);
+    if (ret != 0) {
+        fprintf (stderr, "Failed io_uring_cqe_get: errno=%d\n", ret);
+        SIO_FREE(buf);
+        return nullptr;
+    }
+
+    sio_string *content = sio_string_new ();
+    sio_string_copy_from_chars_with_length (content, buf, len);
+    SIO_FREE(buf);
+
+    io_uring_cqe_seen (&ctx->ring, cqe);
+
+    return content;
 }
 #else // SIO_USE_URING
 sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
