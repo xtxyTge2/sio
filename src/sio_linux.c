@@ -241,8 +241,16 @@ sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
 
     struct io_uring_cqe *cqe = nullptr;
     ret = io_uring_wait_cqe (&ctx->ring, &cqe);
-    if (ret != 0) {
-        fprintf (stderr, "Failed io_uring_cqe_get: errno=%d\n", ret);
+    if (cqe->res < 0) {
+        fprintf (stderr, "Failed io_uring_cqe_get: errno=%d\n", cqe->res);
+        io_uring_cqe_seen (&ctx->ring, cqe);
+        SIO_FREE(buf);
+        return nullptr;
+    }
+    io_uring_cqe_seen (&ctx->ring, cqe);
+
+    if ((size_t)cqe->res != len) {
+        fprintf (stderr, "short read: got: %d, expected: %ld\n", cqe->res, len);
         SIO_FREE(buf);
         return nullptr;
     }
@@ -250,8 +258,6 @@ sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
     sio_string *content = sio_string_new ();
     sio_string_copy_from_chars_with_length (content, buf, len);
     SIO_FREE(buf);
-
-    io_uring_cqe_seen (&ctx->ring, cqe);
 
     return content;
 }
