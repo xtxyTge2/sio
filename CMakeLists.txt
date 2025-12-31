@@ -12,6 +12,18 @@ target_sources(sio
         FILES
             include/sio/sio.h
 )
+
+option(SIO_USE_URING "Use io_uring backend" OFF)
+if(SIO_USE_URING)
+    target_compile_definitions(sio PRIVATE SIO_USE_URING)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(URING REQUIRED liburing)
+    target_link_libraries(sio ${URING_LIBRARIES})
+    target_include_directories(sio PRIVATE ${URING_INCLUDE_DIRS})
+endif()
+
+target_compile_options(sio PRIVATE -Wall -Wpedantic -Werror -Wshadow)
+
 add_subdirectory(examples/01_sio_include)
 add_subdirectory(external/Unity)
 add_subdirectory(test)

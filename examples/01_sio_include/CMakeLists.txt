@@ -9,4 +9,5 @@ target_sources("${PROJECT}"
         main.c
 )
 
+target_compile_options(${PROJECT} PRIVATE -Wall -Wpedantic -Werror -Wshadow)
 target_link_libraries("${PROJECT}" PRIVATE sio)

@@ -12,7 +12,7 @@
     typeof(ptr) *sio_ptr_ = &(ptr);                        \
     size_t sio_count_ = (count);                           \
     *sio_ptr_ = malloc (sio_count_ * sizeof (**sio_ptr_)); \
-    if (!*sio_ptr_ && sio_count_ != 0) {                    \
+    if (!*sio_ptr_ && sio_count_ != 0) {                   \
         assert (false && "SIO_MALLOC failed");             \
         abort ();                                          \
     }                                                      \
@@ -22,22 +22,22 @@
     typeof(ptr) *sio_ptr_ = &(ptr);                       \
     size_t sio_count_ = (count);                          \
     *sio_ptr_ = calloc (sio_count_, sizeof (**sio_ptr_)); \
-    if (!*sio_ptr_ && sio_count_ != 0) {                   \
+    if (!*sio_ptr_ && sio_count_ != 0) {                  \
         assert (false && "SIO_CALLOC failed");            \
         abort ();                                         \
     }                                                     \
 } while (0)
 
-#define SIO_REALLOC(ptr, count) do {                            \
-    typeof(ptr) *sio_ptr_ = &(ptr);                             \
-    size_t sio_count_ = (count);                                \
-    size_t sio_size_ = sio_count_ * sizeof (**sio_ptr_);        \
+#define SIO_REALLOC(ptr, count) do {                             \
+    typeof(ptr) *sio_ptr_ = &(ptr);                              \
+    size_t sio_count_ = (count);                                 \
+    size_t sio_size_ = sio_count_ * sizeof (**sio_ptr_);         \
     typeof(*sio_ptr_) sio_tmp_ = realloc (*sio_ptr_, sio_size_); \
-    if (! sio_tmp_ && sio_count_ != 0) {                        \
-        assert (false && "SIO_REALLOC failed");                 \
-        abort ();                                               \
-    }                                                           \
-    *sio_ptr_ = sio_tmp_;                                       \
+    if (! sio_tmp_ && sio_count_ != 0) {                         \
+        assert (false && "SIO_REALLOC failed");                  \
+        abort ();                                                \
+    }                                                            \
+    *sio_ptr_ = sio_tmp_;                                        \
 } while (0)
 
 #define SIO_REALLOCARRAY(ptr, count) do {                                                   \
@@ -150,6 +150,8 @@ sio_file* sio_file_new (void) {
 }
 
 void sio_file_free (sio_file* p) {
+    if (! p) return;
+
     if (p->file != nullptr) {
         fclose (p->file);
         p->file = nullptr;
@@ -163,6 +165,7 @@ sio_context* sio_context_init (void) {
     sio_context *ctx = nullptr;
     SIO_MALLOC(ctx, 1);
 
+    assert (ctx != nullptr);
     return ctx;
 }
 
@@ -171,10 +174,18 @@ void sio_context_destroy (sio_context* ctx) {
     SIO_FREE(ctx);
 }
 
-sio_string* sio_read_file (sio_context* ctx, sio_file *file) {
+#ifdef SIO_USE_URING
+sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
     assert (ctx);
-    assert (file);
-    assert (file->file);
+
+    if (! file || ! file->file) return nullptr;
+    return nullptr;
+}
+#else // SIO_USE_URING
+sio_string* sio_read_file (sio_context *ctx, sio_file *file) {
+    assert (ctx);
+
+    if (! file || ! file->file) return nullptr;
 
     const int fd = fileno (file->file);
     if (fd == -1) {
@@ -213,6 +224,7 @@ sio_string* sio_read_file (sio_context* ctx, sio_file *file) {
     munmap (buf, len);
     return file_contents;
 }
+#endif // SIO_USE_URING
 
 sio_file* sio_open (sio_context* ctx, sio_path* path, const char* mode) {
     assert (ctx);
@@ -234,10 +246,6 @@ sio_file* sio_open (sio_context* ctx, sio_path* path, const char* mode) {
 }
 
 void sio_close (sio_context* ctx, sio_file* file) {
-    (void) ctx;
-
-    assert (file);
-    assert (file->file);
-
+    assert (ctx);
     sio_file_free (file);
 }

@@ -1,25 +1,13 @@
-all: build test
+all: (build "asan") test_all
 
-build_debug:
-	mkdir -p build
-	cmake -S . -B build/debug --preset debug
-	cmake --build build/debug
+build preset:
+    cmake --preset {{preset}}
+    cmake --build build/{{preset}}
 
-build_asan:
-    mkdir -p build
-    cmake -S . -B build/asan --preset asan
-    cmake --build build/asan
+test preset: (build preset)
+    ctest --test-dir build/{{preset}} -V
 
-build_ubsan:
-    mkdir -p build
-    cmake -S . -B build/ubsan --preset ubsan
-    cmake --build build/ubsan
-
-test_debug: build_debug
-    ctest --test-dir build/debug --rerun-failed --output-on-failure
-
-build: build_debug
-test: build test_debug
+test_all: (test "debug") (test "asan") (test "ubsan") (test "debug_no_uring") (test "asan_no_uring") (test "ubsan_no_uring")
 
 gdb:
 	gdb --args ./build/debug/examples/01_sio_include/sio_include ./build/examples/01_sio_include/input.txt

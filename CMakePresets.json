@@ -2,15 +2,15 @@
   "version": 3,
   "configurePresets": [
     {
-      "name": "debug",
-      "binaryDir": "${sourceDir}/build/debug",
+      "name": "debug_no_uring",
+      "binaryDir": "${sourceDir}/build/debug_no_uring",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "asan",
-      "binaryDir": "${sourceDir}/build/asan",
+      "name": "asan_no_uring",
+      "binaryDir": "${sourceDir}/build/asan_no_uring",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer",
@@ -18,12 +18,36 @@
       }
     },
     {
-      "name": "ubsan",
-      "binaryDir": "${sourceDir}/build/ubsan",
+      "name": "ubsan_no_uring",
+      "binaryDir": "${sourceDir}/build/ubsan_no_uring",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_C_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer",
         "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=undefined"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "debug_no_uring",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "SIO_USE_URING": "ON"
+      }
+    },
+    {
+      "name": "asan",
+      "inherits": "asan_no_uring",
+      "binaryDir": "${sourceDir}/build/asan",
+      "cacheVariables": {
+        "SIO_USE_URING": "ON"
+      }
+    },
+    {
+      "name": "ubsan",
+      "inherits": "ubsan_no_uring",
+      "binaryDir": "${sourceDir}/build/ubsan",
+      "cacheVariables": {
+        "SIO_USE_URING": "ON"
       }
     }
   ]
