@@ -1,0 +1,6 @@
+my input
+two lines
+or three?
+
+emptylines
+okay what now?
