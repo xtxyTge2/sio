@@ -68,18 +68,18 @@
 	} while (0)
 
 /* SIO_PATH */
-sio_path *sio_path_new(void)
+struct sio_path *sio_path_new(void)
 {
-	sio_path *p = nullptr;
+	struct sio_path *p = nullptr;
 	SIO_MALLOC(p, 1);
 	p->path_str.length = 0;
 	p->path_str.chars = nullptr;
 	return p;
 }
 
-sio_path *sio_path_from_c_str(const char *s)
+struct sio_path *sio_path_from_c_str(const char *s)
 {
-	sio_path *path = sio_path_new();
+	struct sio_path *path = sio_path_new();
 	assert(path);
 	assert(path->path_str.length == 0);
 	assert(path->path_str.chars == nullptr);
@@ -87,7 +87,7 @@ sio_path *sio_path_from_c_str(const char *s)
 	return path;
 }
 
-void sio_path_free(sio_path *p)
+void sio_path_free(struct sio_path *p)
 {
 	assert(p);
 
@@ -97,9 +97,9 @@ void sio_path_free(sio_path *p)
 }
 
 /* SIO_STRING */
-sio_string *sio_string_new(void)
+struct sio_string *sio_string_new(void)
 {
-	sio_string *s = nullptr;
+	struct sio_string *s = nullptr;
 	SIO_MALLOC(s, 1);
 
 	s->length = 0;
@@ -107,7 +107,7 @@ sio_string *sio_string_new(void)
 	return s;
 }
 
-void sio_string_free(sio_string *s)
+void sio_string_free(struct sio_string *s)
 {
 	assert(s);
 	s->length = 0;
@@ -115,7 +115,7 @@ void sio_string_free(sio_string *s)
 	SIO_FREE(s);
 }
 
-void sio_string_take_from_chars(sio_string *s, char *data)
+void sio_string_take_from_chars(struct sio_string *s, char *data)
 {
 	assert(s);
 	assert(s->length == 0);
@@ -126,8 +126,8 @@ void sio_string_take_from_chars(sio_string *s, char *data)
 	s->chars = data;
 }
 
-void sio_string_copy_from_chars_with_length(sio_string *s, char const *data,
-					    size_t length)
+void sio_string_copy_from_chars_with_length(struct sio_string *s,
+					    char const *data, size_t length)
 {
 	assert(s);
 	assert(data);
@@ -143,7 +143,7 @@ void sio_string_copy_from_chars_with_length(sio_string *s, char const *data,
 	assert(s->chars[s->length] == '\0');
 }
 
-void sio_string_copy_from_chars(sio_string *s, char const *data)
+void sio_string_copy_from_chars(struct sio_string *s, char const *data)
 {
 	assert(s);
 	assert(s->length == 0);
@@ -161,16 +161,16 @@ void sio_string_copy_from_chars(sio_string *s, char const *data)
 }
 
 /* SIO_FILE */
-sio_file *sio_file_new(void)
+struct sio_file *sio_file_new(void)
 {
-	sio_file *f = nullptr;
+	struct sio_file *f = nullptr;
 	SIO_MALLOC(f, 1);
 	f->ret_p = 0;
 	f->file = nullptr;
 	return f;
 }
 
-void sio_file_free(sio_file *p)
+void sio_file_free(struct sio_file *p)
 {
 	if (!p)
 		return;
@@ -184,9 +184,9 @@ void sio_file_free(sio_file *p)
 }
 
 /* SIO_CONTEXT */
-sio_context *sio_context_init(void)
+struct sio_context *sio_context_init(void)
 {
-	sio_context *ctx = nullptr;
+	struct sio_context *ctx = nullptr;
 	SIO_CALLOC(ctx, 1);
 
 	ctx->ok = false;
@@ -205,7 +205,7 @@ sio_context *sio_context_init(void)
 	return ctx;
 }
 
-void sio_context_destroy(sio_context *ctx)
+void sio_context_destroy(struct sio_context *ctx)
 {
 #ifdef SIO_USE_URING
 	io_uring_queue_exit(&ctx->ring);
@@ -215,7 +215,7 @@ void sio_context_destroy(sio_context *ctx)
 }
 
 #ifdef SIO_USE_URING
-sio_string *sio_read_file(sio_context *ctx, sio_file *file)
+struct sio_string *sio_read_file(struct sio_context *ctx, struct sio_file *file)
 {
 	assert(ctx);
 
@@ -238,7 +238,7 @@ sio_string *sio_read_file(sio_context *ctx, sio_file *file)
 
 	/* file empty */
 	if (len == 0) {
-		sio_string *s = sio_string_new();
+		struct sio_string *s = sio_string_new();
 		return s;
 	}
 
@@ -281,14 +281,14 @@ sio_string *sio_read_file(sio_context *ctx, sio_file *file)
 		return nullptr;
 	}
 
-	sio_string *content = sio_string_new();
+	struct sio_string *content = sio_string_new();
 	sio_string_copy_from_chars_with_length(content, buf, len);
 	SIO_FREE(buf);
 
 	return content;
 }
 #else // SIO_USE_URING
-sio_string *sio_read_file(sio_context *ctx, sio_file *file)
+struct sio_string *sio_read_file(struct sio_context *ctx, struct sio_file *file)
 {
 	assert(ctx);
 
@@ -311,7 +311,7 @@ sio_string *sio_read_file(sio_context *ctx, sio_file *file)
 
 	/* empty file */
 	if (len == 0) {
-		sio_string *s = sio_string_new();
+		struct sio_string *s = sio_string_new();
 		return s;
 	}
 
@@ -322,7 +322,7 @@ sio_string *sio_read_file(sio_context *ctx, sio_file *file)
 		return nullptr;
 	}
 
-	sio_string *file_contents = sio_string_new();
+	struct sio_string *file_contents = sio_string_new();
 	sio_string_copy_from_chars_with_length(file_contents, buf, len);
 
 	assert(file_contents->length == len);
@@ -334,7 +334,8 @@ sio_string *sio_read_file(sio_context *ctx, sio_file *file)
 }
 #endif // SIO_USE_URING
 
-sio_file *sio_open(sio_context *ctx, sio_path *path, const char *mode)
+struct sio_file *sio_open(struct sio_context *ctx, struct sio_path *path,
+			  const char *mode)
 {
 	assert(ctx);
 	assert(path);
@@ -342,7 +343,7 @@ sio_file *sio_open(sio_context *ctx, sio_path *path, const char *mode)
 	assert(path->path_str.chars != nullptr);
 	assert(path->path_str.chars[path->path_str.length] == '\0');
 
-	sio_file *file = sio_file_new();
+	struct sio_file *file = sio_file_new();
 	FILE *f = fopen(path->path_str.chars, mode);
 	if (!f) {
 		sio_file_free(file);
@@ -355,7 +356,7 @@ sio_file *sio_open(sio_context *ctx, sio_path *path, const char *mode)
 	return file;
 }
 
-void sio_close(sio_context *ctx, sio_file *file)
+void sio_close(struct sio_context *ctx, struct sio_file *file)
 {
 	assert(ctx);
 	sio_file_free(file);

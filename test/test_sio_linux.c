@@ -33,7 +33,7 @@ static bool write_test_file(const char *path, const char *content)
 /* SIO_STRING */
 void test_string_new(void)
 {
-	sio_string *s = sio_string_new();
+	struct sio_string *s = sio_string_new();
 	TEST_ASSERT_NOT_NULL(s);
 	TEST_ASSERT_EQUAL(s->length, 0);
 	TEST_ASSERT_NULL(s->chars);
@@ -42,7 +42,7 @@ void test_string_new(void)
 
 void test_string_copy_from_chars(void)
 {
-	sio_string *s = sio_string_new();
+	struct sio_string *s = sio_string_new();
 	TEST_ASSERT_NOT_NULL(s);
 	TEST_ASSERT_EQUAL(s->length, 0);
 	TEST_ASSERT_NULL(s->chars);
@@ -66,7 +66,7 @@ void test_string_copy_from_chars(void)
 
 void test_string_copy_empty(void)
 {
-	sio_string *s = sio_string_new();
+	struct sio_string *s = sio_string_new();
 	TEST_ASSERT_NOT_NULL(s);
 	TEST_ASSERT_EQUAL(s->length, 0);
 	TEST_ASSERT_NULL(s->chars);
@@ -83,7 +83,7 @@ void test_string_copy_empty(void)
 
 void test_string_copy_from_chars_with_length(void)
 {
-	sio_string *s = sio_string_new();
+	struct sio_string *s = sio_string_new();
 	TEST_ASSERT_NOT_NULL(s);
 	TEST_ASSERT_EQUAL(s->length, 0);
 	TEST_ASSERT_NULL(s->chars);
@@ -115,7 +115,7 @@ void test_string_copy_from_chars_with_length(void)
 /* SIO_PATH */
 void test_sio_path_new(void)
 {
-	sio_path *path = sio_path_new();
+	struct sio_path *path = sio_path_new();
 
 	TEST_ASSERT_NOT_NULL(path);
 	TEST_ASSERT_NULL(path->path_str.chars);
@@ -127,7 +127,7 @@ void test_sio_path_new(void)
 void test_sio_path_from_c_str(void)
 {
 	const char *data = "/this/is/a//path";
-	sio_path *path = sio_path_from_c_str(data);
+	struct sio_path *path = sio_path_from_c_str(data);
 
 	TEST_ASSERT_NOT_NULL(path);
 	TEST_ASSERT_NOT_NULL(path->path_str.chars);
@@ -143,11 +143,11 @@ void test_sio_path_from_c_str(void)
 /* SIO_FILE */
 void test_open_non_existent(void)
 {
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
 
-	sio_path *path = sio_path_from_c_str("/path/that/does/not/exist");
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_path *path = sio_path_from_c_str("/path/that/does/not/exist");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NULL(file);
 
 	sio_path_free(path);
@@ -162,17 +162,17 @@ void test_read_small(void)
 	const char *content = "this is a test\nwith two lines";
 	TEST_ASSERT_TRUE(write_test_file(test_path, content));
 
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
 
-	sio_path *path = sio_path_from_c_str(test_path);
+	struct sio_path *path = sio_path_from_c_str(test_path);
 	TEST_ASSERT_NOT_NULL(path);
 
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NOT_NULL(file);
 	TEST_ASSERT_NOT_NULL(file->file);
 
-	sio_string *read_content = sio_read_file(ctx, file);
+	struct sio_string *read_content = sio_read_file(ctx, file);
 	TEST_ASSERT_NOT_NULL(read_content);
 	TEST_ASSERT_NOT_NULL(read_content->chars);
 	TEST_ASSERT_EQUAL(read_content->length, strlen(content));
@@ -190,7 +190,7 @@ void test_read_small(void)
 
 void test_close_nullptr(void)
 {
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
 
 	sio_close(ctx, nullptr);
@@ -204,13 +204,13 @@ void test_open_close(void)
 	const char *content = "123";
 	TEST_ASSERT_TRUE(write_test_file(test_path, content));
 
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
 
-	sio_path *path = sio_path_from_c_str(test_path);
+	struct sio_path *path = sio_path_from_c_str(test_path);
 	TEST_ASSERT_NOT_NULL(path);
 
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NOT_NULL(file);
 	TEST_ASSERT_NOT_NULL(file->file);
 
@@ -229,13 +229,13 @@ void test_open_empty(void)
 	TEST_ASSERT_TRUE(f);
 	TEST_ASSERT_EQUAL(fclose(f), 0);
 
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
-	sio_path *path = sio_path_from_c_str(test_path);
+	struct sio_path *path = sio_path_from_c_str(test_path);
 	TEST_ASSERT_NOT_NULL(path);
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NOT_NULL(file);
-	sio_string *file_content = sio_read_file(ctx, file);
+	struct sio_string *file_content = sio_read_file(ctx, file);
 	TEST_ASSERT_NOT_NULL(file_content);
 	TEST_ASSERT_EQUAL(file_content->length, 0);
 	TEST_ASSERT_NULL(file_content->chars);
@@ -262,13 +262,13 @@ void test_read_4096_bytes(void)
 	}
 	TEST_ASSERT_EQUAL(fclose(f), 0);
 
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
-	sio_path *path = sio_path_from_c_str(test_path);
+	struct sio_path *path = sio_path_from_c_str(test_path);
 	TEST_ASSERT_NOT_NULL(path);
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NOT_NULL(file);
-	sio_string *file_content = sio_read_file(ctx, file);
+	struct sio_string *file_content = sio_read_file(ctx, file);
 	TEST_ASSERT_NOT_NULL(file_content);
 	TEST_ASSERT_EQUAL(file_content->length, len);
 	TEST_ASSERT_NOT_NULL(file_content->chars);
@@ -293,13 +293,13 @@ void test_read_null_bytes(void)
 			  sizeof(data) / sizeof(char));
 	TEST_ASSERT_EQUAL(fclose(f), 0);
 
-	sio_context *ctx = sio_context_init();
+	struct sio_context *ctx = sio_context_init();
 	TEST_ASSERT_NOT_NULL(ctx);
-	sio_path *path = sio_path_from_c_str(test_path);
+	struct sio_path *path = sio_path_from_c_str(test_path);
 	TEST_ASSERT_NOT_NULL(path);
-	sio_file *file = sio_open(ctx, path, "r");
+	struct sio_file *file = sio_open(ctx, path, "r");
 	TEST_ASSERT_NOT_NULL(file);
-	sio_string *file_content = sio_read_file(ctx, file);
+	struct sio_string *file_content = sio_read_file(ctx, file);
 	TEST_ASSERT_NOT_NULL(file_content);
 	TEST_ASSERT_EQUAL(file_content->length, data_len);
 	TEST_ASSERT_NOT_NULL(file_content->chars);

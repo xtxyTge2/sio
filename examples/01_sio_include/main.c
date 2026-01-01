@@ -10,15 +10,11 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	sio_context *sio = sio_context_init();
+	struct sio_context *sio = sio_context_init();
+	struct sio_path *path = sio_path_from_c_str(argv[1]);
+	struct sio_file *file = sio_open(sio, path, "r");
+	struct sio_string *file_contents = sio_read_file(sio, file);
 
-	sio_path *path = sio_path_from_c_str(argv[1]);
-
-	const char *mode = "r";
-	sio_file *file = sio_open(sio, path, mode);
-	assert(file);
-
-	sio_string *file_contents = sio_read_file(sio, file);
 	assert(file_contents);
 	assert(file_contents->chars != nullptr);
 	assert(file_contents->length > 0);
