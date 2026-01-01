@@ -9,6 +9,9 @@ test preset: (build preset)
 
 test_all: (test "debug") (test "asan") (test "ubsan") (test "debug_no_uring") (test "asan_no_uring") (test "ubsan_no_uring")
 
+format:
+    find . -path ./external -prune -o -path ./build -prune -o \( -name '*.c' -o -name '*.h' \) -print
+
 gdb:
 	gdb --args ./build/debug/examples/01_sio_include/sio_include ./build/examples/01_sio_include/input.txt
 
